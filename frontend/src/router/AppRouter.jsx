@@ -45,9 +45,9 @@ export default function AppRoutes() {
           <Route path="/contact" element={<ContactForm />} />
           <Route path="/media" element={<Media />} />
           <Route path="/mission-&-vision" element={<MissionAndVision />} />
-          <Route path="/the-fort-jodhpur" element ={<TheFortJodhpur />} />
-          <Route path="/Shubham-Paradise" element={<ShubhamParadise />} />
-          <Route path="/Shubh-Villa" element={<ShubhVilla />} />
+          {/* <Route path="/the-fort-jodhpur" element ={<TheFortJodhpur />} /> */}
+          {/* <Route path="/Shubham-Paradise" element={<ShubhamParadise />} /> */}
+          {/* <Route path="/Shubh-Villa" element={<ShubhVilla />} /> */}
           <Route path="/privacy-poicy" element={<PrivacyPolicy />} />
           <Route path="/careers" element={<Careers />} />
           <Route path="/medeia-2" element={<Media1 />} />

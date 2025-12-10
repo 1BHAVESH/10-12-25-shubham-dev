@@ -1,32 +1,21 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Image as ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import BannerForm from "@/components/admin/BannerForm";
-import { 
-  useGetBannersQuery, 
   useDeleteBannerMutation,
-  useUpdateBannerMutation, 
-  useGetAdminSideBannerQuery
+  useUpdateBannerMutation,
+  useGetAdminSideBannerQuery,
 } from "@/redux/features/adminApi";
+
+import BannerForm from "@/components/admin/BannerForm";
+import DataTable from "@/components/common/DataTable";
+import useDataTable from "@/hooks/useDataTable";
+
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const BASE_URL = "http://localhost:3001";
 
@@ -42,7 +31,33 @@ export default function BannerManagement() {
 
   const banners = bannersData?.data || [];
 
-  console.log(bannersData);
+  // ⭐ Use the reusable search + filter + pagination hook
+  const {
+    searchQuery,
+    setSearchQuery,
+
+    statusFilter,
+    setStatusFilter,
+
+    currentPage,
+    setCurrentPage,
+
+    itemsPerPage,
+    setItemsPerPage,
+
+    totalPages,
+    filteredData: filteredBanners,
+    paginatedData: paginatedBanners,
+  } = useDataTable(banners, {
+    searchKeys: ["title", "description"],
+    filterFunction: (item, status) => {
+      if (status === "all") return true;
+      if (status === "active") return item.isActive !== false;
+      if (status === "inactive") return item.isActive === false;
+    },
+  });
+
+  // ----------------- ACTION HANDLERS -----------------
 
   const handleEdit = (banner) => {
     setSelectedBanner(banner);
@@ -65,8 +80,8 @@ export default function BannerManagement() {
       toast.success("Banner deleted successfully!");
       setDeleteDialogOpen(false);
       setBannerToDelete(null);
-    } catch (error) {
-      toast.error(error?.data?.message || "Failed to delete banner");
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to delete banner");
     }
   };
 
@@ -80,11 +95,13 @@ export default function BannerManagement() {
       formData.append("isActive", newStatus);
 
       await updateBanner({ id: banner._id, formData }).unwrap();
-      toast.success(`Banner ${newStatus ? "activated" : "deactivated"} successfully!`);
-    } catch (error) {
-      toast.error(error?.data?.message || "Failed to update banner status");
+      toast.success(`Banner ${newStatus ? "activated" : "deactivated"}!`);
+    } catch (err) {
+      toast.error("Failed to update banner status");
     }
   };
+
+  // ----------------- LOADING / ERROR -----------------
 
   if (isLoading) {
     return (
@@ -102,13 +119,14 @@ export default function BannerManagement() {
     );
   }
 
+  // ----------------- UI (Using Reusable DataTable) -----------------
+
   return (
-    <div className="space-y-6 pt-12 lg:pt-0">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-white">Banner Management</h1>
-          <p className="text-zinc-400 mt-1">Manage your website banners</p>
-        </div>
+    <div className="space-y-8 pt-12 lg:pt-0">
+
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-white">Banner Management</h1>
+
         <Button
           onClick={handleAdd}
           className="bg-[#d4af37] hover:bg-[#b8962f] text-black"
@@ -118,128 +136,125 @@ export default function BannerManagement() {
         </Button>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
-        {banners.length === 0 ? (
-          <div className="text-center py-12">
-            <ImageIcon className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-            <p className="text-zinc-400">No banners found. Add your first banner.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-zinc-800 hover:bg-transparent">
-                  <TableHead className="text-zinc-400">Image</TableHead>
-                  <TableHead className="text-zinc-400">Title</TableHead>
-                 
-                  <TableHead className="text-zinc-400 hidden lg:table-cell">Status</TableHead>
-                  <TableHead className="text-zinc-400 hidden sm:table-cell">Order</TableHead>
-                  <TableHead className="text-zinc-400 text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {banners.map((banner) => (
-                  <TableRow key={banner._id} className="border-zinc-800">
-                    <TableCell>
-                      {banner.imageUrl ? (
-                        <img
-                          src={`${BASE_URL}${banner.imageUrl}`}
-                          alt={banner.title}
-                          className="w-16 h-10 object-cover rounded"
-                        />
-                      ) : (
-                        <div className="w-16 h-10 bg-zinc-800 rounded flex items-center justify-center">
-                          <ImageIcon className="w-5 h-5 text-zinc-500" />
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-white font-medium">
-                      {banner.title}
-                    </TableCell>
-                    
-                    <TableCell className="hidden lg:table-cell">
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={banner.isActive !== false}
-                          onCheckedChange={(checked) => handleStatusToggle(banner, checked)}
-                          className="data-[state=checked]:bg-[#d4af37]"
-                        />
-                        <Badge 
-                          variant={banner.isActive !== false ? "default" : "secondary"}
-                          className={
-                            banner.isActive !== false
-                              ? "bg-green-500/10 text-green-500 hover:bg-green-500/20"
-                              : "bg-zinc-700 text-zinc-400"
-                          }
-                        >
-                          {banner.isActive !== false ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-zinc-400 hidden sm:table-cell">
-                      {banner.order || 0}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          size="icon-sm"
-                          variant="ghost"
-                          onClick={() => handleEdit(banner)}
-                          className="text-zinc-400 hover:text-white hover:bg-zinc-800"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="icon-sm"
-                          variant="ghost"
-                          onClick={() => handleDeleteClick(banner)}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </div>
+      <DataTable
+        title="Banners"
+        subtitle="Manage your website banners"
 
+        data={banners}
+        paginatedData={paginatedBanners}
+        filteredData={filteredBanners}
+
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+
+        itemsPerPage={itemsPerPage}
+        setItemsPerPage={setItemsPerPage}
+
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+
+        totalPages={totalPages}
+
+        filterOptions={[
+          { value: "all", label: "All" },
+          { value: "active", label: "Active" },
+          { value: "inactive", label: "Inactive" },
+        ]}
+
+        columns={[
+          {
+            key: "image",
+            label: "Image",
+            render: (banner) => (
+              <img
+                src={`${BASE_URL}${banner.imageUrl}`}
+                className="w-16 h-10 object-cover rounded"
+              />
+            ),
+          },
+
+          { key: "title", label: "Title" },
+
+          {
+            key: "status",
+            label: "Status",
+            render: (banner) => (
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={banner.isActive !== false}
+                  onCheckedChange={(checked) => handleStatusToggle(banner, checked)}
+                  className="data-[state=checked]:bg-[#d4af37]"
+                />
+                <Badge
+                  className={
+                    banner.isActive
+                      ? "bg-green-500/10 text-green-400"
+                      : "bg-zinc-700 text-zinc-300"
+                  }
+                >
+                  {banner.isActive ? "Active" : "Inactive"}
+                </Badge>
+              </div>
+            ),
+          },
+
+          {
+            key: "actions",
+            label: "Actions",
+            render: (banner) => (
+              <div className="flex justify-end gap-2">
+                <Button size="icon-sm" variant="ghost" onClick={() => handleEdit(banner)}>
+                  <Pencil className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  onClick={() => handleDeleteClick(banner)}
+                  className="text-red-400"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ),
+          },
+        ]}
+      />
+
+      {/* Banner Form Modal */}
       <BannerForm
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         banner={selectedBanner}
       />
 
+      {/* Delete Confirm Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
+        <DialogContent className="bg-zinc-900 text-white border border-zinc-700">
           <DialogHeader>
             <DialogTitle>Delete Banner</DialogTitle>
-            <DialogDescription className="text-zinc-400">
-              Are you sure you want to delete &quot;{bannerToDelete?.title}&quot;? This action
-              cannot be undone.
+            <DialogDescription>
+              Are you sure you want to delete "{bannerToDelete?.title}"?
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-            >
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancel
             </Button>
             <Button
-              onClick={handleDeleteConfirm}
+              className="bg-red-600 hover:bg-red-700"
               disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={handleDeleteConfirm}
             >
               {isDeleting ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

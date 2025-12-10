@@ -71,7 +71,7 @@ export default function Footer() {
       {/* Projects */}
       <div>
         <h4 className="font-semibold text-white mb-4 text-base">Projects</h4>
-        <ul className="space-y-2.5 text-sm">
+        {/* <ul className="space-y-2.5 text-sm">
           <li
             onClick={() => navigate("/Shubham-Paradise")}
             className="cursor-pointer hover:text-[#d4af37] transition-colors duration-200"
@@ -90,7 +90,7 @@ export default function Footer() {
           >
             Shubh-Villa
           </li>
-        </ul>
+        </ul> */}
       </div>
 
       {/* Support */}
