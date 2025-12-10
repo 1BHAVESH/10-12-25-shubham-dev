@@ -131,7 +131,7 @@ export default function BannerManagement() {
                 <TableRow className="border-zinc-800 hover:bg-transparent">
                   <TableHead className="text-zinc-400">Image</TableHead>
                   <TableHead className="text-zinc-400">Title</TableHead>
-                  <TableHead className="text-zinc-400 hidden md:table-cell">Description</TableHead>
+                 
                   <TableHead className="text-zinc-400 hidden lg:table-cell">Status</TableHead>
                   <TableHead className="text-zinc-400 hidden sm:table-cell">Order</TableHead>
                   <TableHead className="text-zinc-400 text-right">Actions</TableHead>
@@ -156,9 +156,7 @@ export default function BannerManagement() {
                     <TableCell className="text-white font-medium">
                       {banner.title}
                     </TableCell>
-                    <TableCell className="text-zinc-400 hidden md:table-cell max-w-[200px] truncate">
-                      {banner.description || "-"}
-                    </TableCell>
+                    
                     <TableCell className="hidden lg:table-cell">
                       <div className="flex items-center gap-2">
                         <Switch
